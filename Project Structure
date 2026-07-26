@@ -1,0 +1,20 @@
+foodbridge/
+├── backend/
+│ ├── main.go # Entire backend (Gin server, routes, handlers)
+│ ├── go.mod
+│ └── go.sum
+├── frontend/
+│ ├── index.html # Landing page
+│ ├── css/
+│ │ └── style.css # All styles
+│ ├── js/
+│ │ ├── auth.js # Auth manager & API helpers
+│ │ └── app.js # Utility functions (optional)
+│ └── pages/
+│ ├── login.html
+│ ├── register.html
+│ ├── restaurant-dashboard.html
+│ ├── ngo-dashboard.html
+│ ├── volunteer-dashboard.html
+│ └── admin-dashboard.html
+└── run.bat # Windows launcher (starts MongoDB, backend, frontend)
