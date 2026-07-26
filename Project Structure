@@ -18,3 +18,35 @@ foodbridge/
         ├── ngo-dashboard.html
         ├── volunteer-dashboard.html
         └── admin-dashboard.html
+
+
+
+🚀 Quick Start (Automatic – Windows only) 
+
+   Double-click run.bat in the foodbridge folder.
+
+   Three terminals will open – leave them open.
+   Your browser opens http://localhost:3000 automatically.
+
+
+   🖥️ Manual Start (Any OS)
+    1. Start MongoDB
+       Open a terminal and keep it running:
+         mongod
+  
+    2. Start the Backend
+       Open another terminal:
+         cd foodbridge/backend
+         go mod tidy
+         go run main.go
+           You should see:
+                Connected to MongoDB!
+                Server running on http://localhost:8080
+    3. Serve the Frontend
+       Open a third terminal:
+         cd foodbridge/frontend
+         python -m http.server 3000
+
+
+Go to http://localhost:3000 in your browser.
+keep all terminals open.
