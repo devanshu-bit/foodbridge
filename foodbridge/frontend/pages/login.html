@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - FoodBridge</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="logo">
+                <i class="fas fa-heart"></i>
+            </div>
+            <h2>Welcome Back! 👋</h2>
+            <p class="subtitle">Login to continue making a difference</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>📧 Email Address</label>
+                    <input type="email" id="email" placeholder="you@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>🔒 Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+
+                <p style="text-align:center;margin-top:1.5rem;color:#64748b;">
+                    Don't have an account? <a href="/pages/register.html" class="link">Register here</a>
+                </p>
+
+                <div style="margin-top:1rem;padding:1rem;background:#f0fdf4;border-radius:12px;text-align:center;">
+                    <p style="font-size:0.85rem;color:#065f46;margin:0;">
+                        <strong>🔑 Demo Admin:</strong><br>
+                        admin@foodbridge.com / admin123
+                    </p>
+                </div>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Logging you in...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        if (authManager.isAuthenticated()) {
+            window.location.href = authManager.getDashboardUrl();
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            showLoading();
+            this.style.opacity = '0.7';
+
+            try {
+                await authManager.login(
+                    document.getElementById('email').value,
+                    document.getElementById('password').value
+                );
+                window.location.href = authManager.getDashboardUrl();
+            } catch (error) {
+                showAlert('❌ ' + error.message, 'error');
+            } finally {
+                hideLoading();
+                this.style.opacity = '1';
+            }
+        });
+    </script>
+</body>
+</html>

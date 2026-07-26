@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Dashboard - FoodBridge</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><i class="fas fa-heart"></i><span>FoodBridge</span></div>
+            <div class="nav-links">
+                <a href="/index.html">Home</a>
+                <a href="/pages/volunteer-dashboard.html" class="active">Dashboard</a>
+                <a href="#" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div>
+                <h2>🚚 Welcome, <span id="volunteerName"></span>!</h2>
+                <p style="color:#64748b;">Pick up and deliver food</p>
+            </div>
+            <button class="btn btn-info btn-sm" onclick="loadAll()"><i class="fas fa-sync"></i> Refresh</button>
+        </div>
+
+        <!-- Debug Box -->
+        <div style="background:#f0f0f0;padding:10px;margin-bottom:20px;border-radius:8px;">
+            <strong>info:</strong> <span id="debugText">Waiting...</span>
+        </div>
+
+        <h3>📦 Available Pickups</h3>
+        <div id="availablePickups"></div>
+
+        <h3 style="margin-top:2rem;">🚀 Your Active Deliveries</h3>
+        <div id="activeDeliveries"></div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let refreshInterval;
+        const debugSpan = document.getElementById('debugText');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!authManager.isAuthenticated() || authManager.getUser().role !== 'volunteer') {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            document.getElementById('volunteerName').textContent = authManager.getUser().name;
+            loadAll();
+            refreshInterval = setInterval(loadAll, 15000);
+
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                clearInterval(refreshInterval);
+                authManager.logout();
+            });
+        });
+
+        async function loadAll() {
+            debugSpan.textContent = 'Loading...';
+            try {
+                await Promise.all([loadAvailablePickups(), loadActiveDeliveries()]);
+                debugSpan.textContent = 'Data loaded.';
+            } catch (err) {
+                debugSpan.textContent = 'ERROR: ' + err.message;
+                console.error(err);
+            }
+        }
+
+        async function loadAvailablePickups() {
+            try {
+                const donations = await apiCall('donations/accepted');
+                console.log('Accepted donations:', donations);
+                const container = document.getElementById('availablePickups');
+                if (!donations || donations.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;padding:2rem;">No pickups available. Make sure an NGO has accepted a donation.</p>';
+                    return;
+                }
+                container.innerHTML = donations.map(d => `
+                    <div class="donation-card">
+                        <div class="donation-header">
+                            <h4>🍱 ${d.food_name}</h4>
+                            <span class="status-badge status-accepted">ACCEPTED</span>
+                        </div>
+                        <div class="donation-info">
+                            <p><i class="fas fa-store"></i> From: ${d.restaurant_name} 📞 ${d.restaurant_phone || 'N/A'}</p>
+                            <p><i class="fas fa-hand-holding-heart"></i> To: ${d.ngo_name || 'Unknown'} 📞 ${d.ngo_phone || 'N/A'}</p>
+                            <p><i class="fas fa-box"></i> Qty: ${d.quantity}</p>
+                            <p><i class="fas fa-clock"></i> Pickup: ${formatDate(d.pickup_time)}</p>
+                            <p><i class="fas fa-map-marker-alt"></i> ${d.pickup_location}</p>
+                        </div>
+                        <div class="donation-actions">
+                            <button class="btn btn-warning btn-sm" onclick="acceptPickup('${d.id}')"><i class="fas fa-hand-rock"></i> Accept Pickup</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('availablePickups').innerHTML = '<p style="color:red;">Failed to load: ' + error.message + '</p>';
+            }
+        }
+
+        async function loadActiveDeliveries() {
+            try {
+                const donations = await apiCall('donations/user');
+                console.log('My deliveries:', donations);
+                const container = document.getElementById('activeDeliveries');
+                const myDels = donations.filter(d => d.volunteer_id);
+                if (myDels.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;padding:2rem;">No active deliveries.</p>';
+                    return;
+                }
+                container.innerHTML = myDels.map(d => `
+                    <div class="donation-card">
+                        <div class="donation-header">
+                            <h4>🍱 ${d.food_name}</h4>
+                            ${getStatusBadge(d.status)}
+                        </div>
+                        <div class="donation-info">
+                            <p><i class="fas fa-store"></i> From: ${d.restaurant_name} 📞 ${d.restaurant_phone || 'N/A'}</p>
+                            <p><i class="fas fa-hand-holding-heart"></i> To: ${d.ngo_name || 'Unknown'} 📞 ${d.ngo_phone || 'N/A'}</p>
+                            <p><i class="fas fa-box"></i> Qty: ${d.quantity}</p>
+                            <p><i class="fas fa-map-marker-alt"></i> ${d.pickup_location}</p>
+                        </div>
+                        <div class="donation-actions">
+                            ${d.status === 'assigned' ? `<button class="btn btn-info btn-sm" onclick="updateStatus('${d.id}', 'picked_up')"><i class="fas fa-box-open"></i> Picked Up</button>` : ''}
+                            ${d.status === 'picked_up' ? `<button class="btn btn-success btn-sm" onclick="updateStatus('${d.id}', 'delivered')"><i class="fas fa-check-double"></i> Delivered</button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('activeDeliveries').innerHTML = '<p style="color:red;">Failed to load: ' + error.message + '</p>';
+            }
+        }
+
+        async function acceptPickup(id) {
+            try {
+                await apiCall(`donations/${id}/assign`, 'PUT');
+                showAlert('Pickup accepted! 🎉', 'success');
+                loadAll();
+            } catch (error) { showAlert('Failed: ' + error.message, 'error'); }
+        }
+
+        async function updateStatus(id, status) {
+            try {
+                await apiCall(`donations/${id}/status`, 'PUT', { status });
+                showAlert('Status updated! ✅', 'success');
+                loadAll();
+            } catch (error) { showAlert('Failed: ' + error.message, 'error'); }
+        }
+    </script>
+</body>
+</html>

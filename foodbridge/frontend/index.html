@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodBridge - Connect. Donate. Feed.</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-heart"></i>
+                <span>FoodBridge</span>
+            </div>
+            <div class="nav-links" id="navLinks">
+                <a href="/index.html" class="active">Home</a>
+                <a href="/pages/login.html" id="loginLink">Login</a>
+                <a href="/pages/register.html" id="registerLink">Register</a>
+                <a href="#" id="dashboardLink" style="display:none;">Dashboard</a>
+                <a href="#" id="logoutBtn" style="display:none;">Logout</a>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Bridge the Gap Between Surplus & Hunger</h1>
+            <p>Connecting restaurants with surplus food to NGOs and volunteers. Together, we can reduce food waste and feed those in need.</p>
+            <div class="hero-buttons">
+                <a href="/pages/register.html" class="btn btn-primary">
+                    <i class="fas fa-rocket"></i> Get Started
+                </a>
+                <a href="#how-it-works" class="btn btn-secondary">
+                    <i class="fas fa-info-circle"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <section id="how-it-works" class="how-it-works">
+        <h2>How FoodBridge Works</h2>
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-icon">
+                    <i class="fas fa-store-alt"></i>
+                </div>
+                <h3>Restaurants Donate</h3>
+                <p>Restaurants list surplus food with pickup time and location. Quick, easy, and impactful.</p>
+            </div>
+            <div class="step">
+                <div class="step-icon">
+                    <i class="fas fa-hand-holding-heart"></i>
+                </div>
+                <h3>NGOs Accept</h3>
+                <p>NGOs browse available donations and accept food they need for their communities.</p>
+            </div>
+            <div class="step">
+                <div class="step-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h3>Volunteers Deliver</h3>
+                <p>Volunteers pick up food from restaurants and deliver it directly to NGOs.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="stats-container">
+            <div class="stat-item">
+                <h3>1000+</h3>
+                <p>Meals Donated</p>
+            </div>
+            <div class="stat-item">
+                <h3>50+</h3>
+                <p>Active NGOs</p>
+            </div>
+            <div class="stat-item">
+                <h3>200+</h3>
+                <p>Volunteers</p>
+            </div>
+            <div class="stat-item">
+                <h3>75+</h3>
+                <p>Restaurants</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🍽️ FoodBridge</h3>
+                <p>Connecting restaurants with NGOs to reduce food waste and fight hunger in our communities.</p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <p><i class="fas fa-envelope"></i> devanshur279@gmail.com</p>
+                <p><i class="fas fa-phone"></i> +91 8708360857</p>
+                <p><i class="fas fa-map-marker-alt"></i>  India, haryana</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>FoodBridge. Made with ❤️ for a better world.</p>
+        </div>
+    </footer>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            authManager.updateNavbar();
+            // Hamburger menu
+            document.getElementById('hamburger').addEventListener('click', () => {
+                document.getElementById('navLinks').classList.toggle('active');
+            });
+            document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                authManager.logout();
+            });
+        });
+    </script>
+</body>
+</html>

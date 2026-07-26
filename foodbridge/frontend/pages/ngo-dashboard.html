@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO Dashboard - FoodBridge</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><i class="fas fa-heart"></i><span>FoodBridge</span></div>
+            <div class="nav-links">
+                <a href="/index.html">Home</a>
+                <a href="/pages/ngo-dashboard.html" class="active">Dashboard</a>
+                <a href="#" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div>
+                <h2>🤝 Welcome, <span id="ngoName"></span>!</h2>
+                <p style="color:#64748b;">Browse and accept food donations</p>
+            </div>
+            <button class="btn btn-info btn-sm" onclick="loadAll()"><i class="fas fa-sync"></i> Refresh</button>
+        </div>
+
+        <h3>🎁 Available Donations</h3>
+        <div id="availableDonations"></div>
+
+        <h3 style="margin-top:2rem;">✅ Your Accepted Donations</h3>
+        <div id="acceptedDonationsList"></div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let refreshInterval;
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!authManager.isAuthenticated() || authManager.getUser().role !== 'ngo') {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            document.getElementById('ngoName').textContent = authManager.getUser().name;
+            loadAll();
+            refreshInterval = setInterval(loadAll, 15000);
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                clearInterval(refreshInterval);
+                authManager.logout();
+            });
+        });
+
+        async function loadAll() {
+            await Promise.all([loadAvailableDonations(), loadAcceptedDonations()]);
+        }
+
+        async function loadAvailableDonations() {
+            try {
+                const donations = await apiCall('donations/available');
+                const container = document.getElementById('availableDonations');
+                if (!donations || donations.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;padding:2rem;">No available donations.</p>';
+                    return;
+                }
+                container.innerHTML = donations.map(d => `
+                    <div class="donation-card">
+                        <div class="donation-header"><h4>🍱 ${d.food_name}</h4><span class="status-badge status-available">AVAILABLE</span></div>
+                        <div class="donation-info">
+                            <p><i class="fas fa-store"></i> ${d.restaurant_name} 📞 <a href="tel:${d.restaurant_phone}">${d.restaurant_phone || 'N/A'}</a></p>
+                            <p><i class="fas fa-box"></i> Qty: ${d.quantity}</p>
+                            <p><i class="fas fa-clock"></i> Pickup: ${formatDate(d.pickup_time)}</p>
+                            <p><i class="fas fa-map-marker-alt"></i> ${d.pickup_location}</p>
+                        </div>
+                        <div class="donation-actions">
+                            <button class="btn btn-success btn-sm" onclick="acceptDonation('${d.id}')"><i class="fas fa-check-circle"></i> Accept</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) { console.error(error); }
+        }
+
+        async function loadAcceptedDonations() {
+            try {
+                const donations = await apiCall('donations/user');
+                const container = document.getElementById('acceptedDonationsList');
+                const userDonations = donations.filter(d => d.ngo_id);
+                if (userDonations.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;padding:2rem;">No accepted donations yet.</p>';
+                    return;
+                }
+                container.innerHTML = userDonations.map(d => `
+                    <div class="donation-card">
+                        <div class="donation-header"><h4>🍱 ${d.food_name}</h4>${getStatusBadge(d.status)}</div>
+                        <div class="donation-info">
+                            <p><i class="fas fa-store"></i> From: ${d.restaurant_name} 📞 <a href="tel:${d.restaurant_phone}">${d.restaurant_phone || 'N/A'}</a></p>
+                            <p><i class="fas fa-box"></i> Qty: ${d.quantity}</p>
+                            ${d.volunteer_name ? `<p><i class="fas fa-truck"></i> Volunteer: ${d.volunteer_name} 📞 <a href="tel:${d.volunteer_phone}">${d.volunteer_phone || 'N/A'}</a></p>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) { console.error(error); }
+        }
+
+        async function acceptDonation(id) {
+            try {
+                await apiCall(`donations/${id}/accept`, 'PUT');
+                showAlert('Accepted! 🎉', 'success');
+                loadAll();
+            } catch (error) { showAlert('Failed: ' + error.message, 'error'); }
+        }
+    </script>
+</body>
+</html>

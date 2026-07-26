@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Dashboard - FoodBridge</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><i class="fas fa-heart"></i><span>FoodBridge</span></div>
+            <div class="nav-links">
+                <a href="/index.html">Home</a>
+                <a href="/pages/restaurant-dashboard.html" class="active">Dashboard</a>
+                <a href="#" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div>
+                <h2>🏪 Welcome, <span id="restaurantName"></span>!</h2>
+                <p style="color:#64748b;">Manage your food donations</p>
+            </div>
+            <div style="display:flex;gap:1rem;">
+                <button class="btn btn-info btn-sm" onclick="loadDonations()"><i class="fas fa-sync"></i> Refresh</button>
+                <button class="btn btn-primary" id="newDonationBtn"><i class="fas fa-plus-circle"></i> New Donation</button>
+            </div>
+        </div>
+
+        <h3>📋 Your Donations</h3>
+        <div id="donationsList"></div>
+    </div>
+
+    <!-- New Donation Modal -->
+    <div class="modal" id="donationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✨ Create New Donation</h3>
+                <span class="modal-close" id="closeModal">&times;</span>
+            </div>
+            <form id="donationForm">
+                <div class="form-group"><label>🍱 Food Name</label><input type="text" id="foodName" required></div>
+                <div class="form-group"><label>📦 Quantity (servings/kg)</label><input type="number" id="quantity" required min="1"></div>
+                <div class="form-group"><label>⏰ Pickup Time</label><input type="datetime-local" id="pickupTime" required></div>
+                <div class="form-group"><label>📍 Pickup Location</label><textarea id="pickupLocation" required></textarea></div>
+                <div id="donationError" class="alert alert-error" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fas fa-gift"></i> Create Donation</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let refreshInterval;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!authManager.isAuthenticated() || authManager.getUser().role !== 'restaurant') {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            document.getElementById('restaurantName').textContent = authManager.getUser().name;
+            loadDonations();
+            refreshInterval = setInterval(loadDonations, 15000);
+
+            // Modal controls
+            const modal = document.getElementById('donationModal');
+            document.getElementById('newDonationBtn').addEventListener('click', () => modal.classList.add('active'));
+            document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('active'));
+            window.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+            document.getElementById('donationForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const errorDiv = document.getElementById('donationError');
+                errorDiv.style.display = 'none';
+                try {
+                    await apiCall('donations', 'POST', {
+                        food_name: document.getElementById('foodName').value,
+                        quantity: parseInt(document.getElementById('quantity').value),
+                        pickup_time: new Date(document.getElementById('pickupTime').value).toISOString(),
+                        pickup_location: document.getElementById('pickupLocation').value,
+                        restaurant_name: authManager.getUser().name
+                    });
+                    modal.classList.remove('active');
+                    document.getElementById('donationForm').reset();
+                    loadDonations();
+                    showAlert('Donation created! 🎉', 'success');
+                } catch (error) {
+                    errorDiv.textContent = error.message;
+                    errorDiv.style.display = 'block';
+                }
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                clearInterval(refreshInterval);
+                authManager.logout();
+            });
+        });
+
+        async function loadDonations() {
+            try {
+                const donations = await apiCall('donations/user');
+                const container = document.getElementById('donationsList');
+                if (!donations || donations.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding:2rem;">No donations yet. Click "New Donation" to create one.</p>';
+                    return;
+                }
+
+                container.innerHTML = donations.map(d => `
+                    <div class="donation-card">
+                        <div class="donation-header">
+                            <h4>🍱 ${d.food_name}</h4>
+                            ${getStatusBadge(d.status)}
+                        </div>
+                        <div class="donation-info">
+                            <p><i class="fas fa-box"></i> Qty: ${d.quantity}</p>
+                            <p><i class="fas fa-clock"></i> Pickup: ${formatDate(d.pickup_time)}</p>
+                            <p><i class="fas fa-map-marker-alt"></i> ${d.pickup_location}</p>
+                            ${d.ngo_name ? `<p><i class="fas fa-hand-holding-heart"></i> NGO: ${d.ngo_name} 📞 <a href="tel:${d.ngo_phone}">${d.ngo_phone || 'N/A'}</a></p>` : '<p><i class="fas fa-hand-holding-heart"></i> Not yet accepted</p>'}
+                            ${d.volunteer_name ? `<p><i class="fas fa-truck"></i> Volunteer: ${d.volunteer_name} 📞 <a href="tel:${d.volunteer_phone}">${d.volunteer_phone || 'N/A'}</a></p>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading donations:', error);
+            }
+        }
+    </script>
+</body>
+</html>
