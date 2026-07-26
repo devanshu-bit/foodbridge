@@ -41,5 +41,14 @@ Built as a fully functional MVP for hackathons – simple, clean, and ready to d
 | Font Awesome    | REST API        |           | bcrypt|
 
 ---
+🔄 Workflow
+1.Restaurant lists surplus food (name, quantity, pickup                time/location).
+2.Donation appears as available.
+3.NGO browses available donations and accepts one → status becomes     accepted.
+4.Accepted donations are visible to volunteers.
+5.Volunteer accepts a pickup → status becomes assigned.
+6.Volunteer picks up food → marks as picked_up.
+7.Volunteer delivers → marks as delivered.
 
+At each step, all parties see relevant contact numbers for coordination.
 
